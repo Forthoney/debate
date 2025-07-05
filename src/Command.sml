@@ -7,7 +7,7 @@ struct
         { name = "--help"
         , alias = []
         , help = "show help"
-        , args = Arg.Zero (fn () => SOME (print (helpMsg ^ "\n")))
+        , args = Argument.zero (fn () => SOME (print (helpMsg ^ "\n")))
         }
       open Combinator
 
@@ -30,14 +30,14 @@ struct
     end
 end
 
-val config = {verbose = ref ""}
+val config = {verbose = ref 0}
 
 val verbose =
   { name = "--verbose"
   , alias = []
-  , args = Arg.OptionalWithDefault (Arg.set config #verbose, "default")
+  , args = Argument.Int.optionalWithDefault (fn v => SOME (#verbose config := v), 20)
   , help = "verbosity"
   }
 
 val _ = Command.new [verbose] (CommandLine.arguments ())
-val _ = (print o ! o #verbose) config
+val _ = (print o Int.toString o ! o #verbose) config

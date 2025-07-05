@@ -1,24 +1,14 @@
-signature FLAG =
+structure Flag:
 sig
   type 'a t =
-    { name: string
-    , alias: string list
-    , help: string
-    , args: 'a Arg.arity
-    }
+    {name: string, alias: string list, help: string, args: 'a BaseArgument.arity}
 
   val toCombinator: 'a t -> (unit -> 'a option) Combinator.parser
   val toHelp: 'a t -> string
-end
-
-structure Flag: FLAG =
+end =
 struct
   type 'a t =
-    { name: string
-    , alias: string list
-    , help: string
-    , args: 'a Arg.arity
-    }
+    {name: string, alias: string list, help: string, args: 'a BaseArgument.arity}
 
   fun toCombinator {name, alias, args, help} =
     let
@@ -39,13 +29,13 @@ struct
             fmap (lazy action) (flag andThen consumeRange range)
         in
           case args of
-            Arg.Zero action => fmap (lazy action o ignore) flag
-          | Arg.Optional action =>
+            BaseArgument.Zero action => fmap (lazy action o ignore) flag
+          | BaseArgument.Optional action =>
               fmap (lazy action)
                 (flag andThen try (satisfy (not o String.isPrefix "-")))
-          | Arg.AtLeastOne action => multiArg action {low = 1, hi = NONE}
-          | Arg.Any action => multiArg action {low = 0, hi = NONE}
-          | Arg.Exactly (n, action) => multiArg action {low = n, hi = SOME n}
+          | BaseArgument.AtLeastOne action => multiArg action {low = 1, hi = NONE}
+          | BaseArgument.Any action => multiArg action {low = 0, hi = NONE}
+          | BaseArgument.Exactly (n, action) => multiArg action {low = n, hi = SOME n}
         end
     in
       or' (map convert expanded)
