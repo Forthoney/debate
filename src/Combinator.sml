@@ -9,6 +9,7 @@ sig
   val or: 'a parser * 'a parser -> 'a parser
   val or': 'a parser list -> 'a parser
   val andThen: 'a parser * 'b parser -> 'b parser
+  val try: 'a parser -> 'a option parser
   val fmap: ('a -> 'b) -> 'a parser -> 'b parser
   val consumeRange: {low: int, hi: int option} -> token list parser
   val repeat: 'a parser -> 'a list parser
@@ -44,13 +45,18 @@ in
 
     fun andThen (fst, snd) xs =
       case fst xs of
-        Ok res => snd xs
+        Ok (_, rest) => snd rest
       | Err e => Err e
 
     fun fmap f comb xs =
       case comb xs of
         Ok (v, rest) => Ok (f v, rest)
       | Err e => Err e
+
+    fun try comb xs =
+      case comb xs of
+        Ok (v, rest) => Ok (SOME v, rest)
+      | Err _ => Ok (NONE, xs)
 
     fun consumeRange {hi = NONE, low} xs =
           if length xs < low then Err "not enough" else Ok (xs, [])
