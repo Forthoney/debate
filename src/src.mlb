@@ -1,5 +1,6 @@
 $(SML_LIB)/basis/basis.mlb
 ../deps/result/src/src.mlb
 Combinator.sml
+Arg.sml
 Flag.sml
 Command.sml
