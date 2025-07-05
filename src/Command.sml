@@ -7,12 +7,23 @@ struct
         { name = "--help"
         , alias = []
         , help = "show help"
-        , args = Parser.Zero (fn () => print (helpMsg ^ "\n"))
+        , args = Flag.Zero (fn () => print (helpMsg ^ "\n"))
         }
       open Combinator
-      infix or
     in
-      (fmap ignore o repeat o or' o map Flag.toCombinator) flags
-      or Flag.toCombinator help
+      or
+        ( (fmap (List.app (fn f => f ())) o repeat o or' o map Flag.toCombinator)
+            flags
+        , (fmap (fn f => f ()) o Flag.toCombinator) help
+        )
     end
 end
+
+val verbose =
+  { name = "--verbose"
+  , alias = []
+  , args = Flag.Zero (fn () => print ("verbose" ^ "\n"))
+  , help = "verbosity"
+  }
+
+val _ = Command.new [verbose] ["--foo", "--help"]
