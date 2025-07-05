@@ -1,13 +1,3 @@
-structure Arity =
-struct
-  type t = {low: int, hi: int option}
-  val zero = {low = 0, hi = SOME 0}
-  val one = {low = 1, hi = SOME 1}
-  val zeroOrMore = {low = 0, hi = NONE}
-  val oneOrMore = {low = 1, hi = NONE}
-  val optional = {low = 0, hi = SOME 1}
-end
-
 signature COMBINATOR =
 sig
   eqtype token
@@ -17,8 +7,11 @@ sig
   val satisfy: (token -> bool) -> token parser
   val exact: token -> token parser
   val or: 'a parser * 'a parser -> 'a parser
+  val or': 'a parser list -> 'a parser
   val andThen: 'a parser * 'b parser -> 'b parser
-  val consumeRange: {hi: int option, low: int} -> token list parser
+  val fmap: ('a -> 'b) -> 'a parser -> 'b parser
+  val consumeRange: {low: int, hi: int option} -> token list parser
+  val repeat: 'a parser -> 'a list parser
 end
 
 local open Result
@@ -38,6 +31,12 @@ in
     fun exact s =
       satisfy (fn arg => arg = s)
 
+    fun or' [] xs = Err "or'"
+      | or' (fst :: rest) xs =
+          case fst xs of
+            Ok res => Ok res
+          | Err _ => or' rest xs
+
     fun or (fst, snd) xs =
       case fst xs of
         Ok res => Ok res
@@ -46,6 +45,11 @@ in
     fun andThen (fst, snd) xs =
       case fst xs of
         Ok res => snd xs
+      | Err e => Err e
+
+    fun fmap f comb xs =
+      case comb xs of
+        Ok (v, rest) => Ok (f v, rest)
       | Err e => Err e
 
     fun consumeRange {hi = NONE, low} xs =
@@ -62,5 +66,17 @@ in
           in
             loop [] 0 xs
           end
+
+    fun repeat comb xs =
+      let
+        fun loop acc [] =
+              Ok (rev acc, [])
+          | loop acc xs =
+              case comb xs of
+                Ok (v, rest) => loop (v :: acc) rest
+              | Err e => Err e
+      in
+        loop [] xs
+      end
   end
 end

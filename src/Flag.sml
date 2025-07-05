@@ -1,44 +1,59 @@
 signature FLAG =
 sig
-  type t = {name: string, alt: string option, help: string, arity: Arity.t}
-  type flag_info = {name: string, alt: string option, help: string}
+  datatype args =
+    Zero of unit -> unit
+  | Optional of string option -> unit
+  | AtLeastOne of string list -> unit
+  | Any of string list -> unit
+  | Exactly of int * (string list -> unit)
 
-  val binaryFlag: flag_info -> t
-  val parse: t -> string list Combinator.parser
+  type t = {name: string, short: char option, help: string, args: args}
+
+  val toCombinator: t -> unit Combinator.parser
+  val toHelp: t -> string
 end
 
 local open Result
 in
   structure Flag: FLAG =
   struct
-    type t = {name: string, alt: string option, help: string, arity: Arity.t}
-    type flag_info = {name: string, alt: string option, help: string}
+    datatype args =
+      Zero of unit -> unit
+    | Optional of string option -> unit
+    | AtLeastOne of string list -> unit
+    | Any of string list -> unit
+    | Exactly of int * (string list -> unit)
 
-    fun binaryFlag {name, alt, help} =
-      {name = name, alt = alt, help = help, arity = Arity.zero}
+    type t = {name: string, short: char option, help: string, args: args}
 
-    fun parse {name, alt, arity, help} xs =
+    fun shortToString c = "-" ^ Char.toString c
+
+    fun toCombinator {name, short, args, help} =
       let
         open Combinator
-        val it =
-          case alt of
-            SOME alt => or (exact name, exact alt) xs
-          | NONE => exact name xs
+        infix andThen
+        infix or
+        val flag =
+          case short of
+            SOME short => exact name or exact (shortToString short)
+          | NONE => exact name
+        fun argList action range =
+          fmap action (flag andThen consumeRange range)
       in
-        case it of
-          Err e => Err e
-        | Ok (name, xs) => consumeRange arity xs
+        case args of
+          Zero action => fmap (action o ignore) flag
+        | Optional action => raise Fail "impl"
+        | AtLeastOne action => argList action {low = 1, hi = NONE}
+        | Any action => argList action {low = 0, hi = NONE}
+        | Exactly (n, action) => argList action {low = n, hi = SOME n}
+      end
+
+    fun toHelp {name, short, args, help} =
+      let
+        val short = Option.getOpt
+          (Option.map (fn s => shortToString s ^ ", ") short, "    ")
+      in
+        "  " ^ short ^ name ^ "\t" ^ help
       end
   end
 end
-
-val f = Flag.binaryFlag {name = "--help", alt = NONE, help = "show help"}
-val _ =
-  case Flag.parse f ["--help"] of
-    Result.Ok v => ()
-  | Result.Err e => raise Fail e
-
-val _ =
-  case Flag.parse f ["help"] of
-    Result.Ok v => raise Fail "unexpected"
-  | Result.Err e => ()
