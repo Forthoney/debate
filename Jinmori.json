@@ -1,0 +1,9 @@
+{
+    "package" : {
+        "name" : "debate",
+        "version" : "0.1.0"
+      },
+    "dependencies" : [
+        "github.com/Forthoney/result"
+      ]
+  }
