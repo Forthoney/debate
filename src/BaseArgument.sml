@@ -24,9 +24,12 @@ struct
     in
       case arg of
         Zero action => fmap (lazy action) noOp
-      | Optional action => fmap (lazy action) (try (satisfy (not o String.isPrefix "-")))
-      | AtLeastOne action => fmap (lazy action) (consumeRange {low = 1, hi = NONE})
+      | Optional action =>
+          fmap (lazy action) (try (satisfy (not o String.isPrefix "-")))
+      | AtLeastOne action =>
+          fmap (lazy action) (consumeRange {low = 1, hi = NONE})
       | Any action => fmap (lazy action) (consumeRange {low = 0, hi = NONE})
-      | Exactly (n, action) => fmap (lazy action) (consumeRange {low = n, hi = SOME n})
+      | Exactly (n, action) =>
+          fmap (lazy action) (consumeRange {low = n, hi = SOME n})
     end
 end

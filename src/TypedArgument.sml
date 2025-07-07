@@ -1,4 +1,9 @@
-functor TypedArgumentFn (T: sig type a val fromString: string -> a option end) =
+functor TypedArgumentFn
+  (T:
+   sig
+     type a
+     val fromString: string -> a option
+   end) =
 struct
   type a = T.a
 

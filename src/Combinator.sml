@@ -9,6 +9,7 @@ sig
   val exact: token -> token parser
   val or: 'a parser * 'a parser -> 'a parser
   val or': 'a parser list -> 'a parser
+  val bind: 'a parser * ('a -> 'b parser) -> 'b parser
   val andThen: 'a parser * 'b parser -> 'b parser
   val try: 'a parser -> 'a option parser
   val fmap: ('a -> 'b) -> 'a parser -> 'b parser
@@ -46,10 +47,13 @@ in
         Ok res => Ok res
       | Err _ => snd xs
 
-    fun andThen (fst, snd) xs =
+    fun bind (fst, snd) xs =
       case fst xs of
-        Ok (_, rest) => snd rest
+        Ok (v, rest) => snd v rest
       | Err e => Err e
+
+    fun andThen (fst, snd) =
+      bind (fst, fn _ => snd)
 
     fun fmap f comb xs =
       case comb xs of
@@ -78,12 +82,10 @@ in
 
     fun repeat comb xs =
       let
-        fun loop acc [] =
-              Ok (rev acc, [])
-          | loop acc xs =
-              case comb xs of
-                Ok (v, rest) => loop (v :: acc) rest
-              | Err e => Err e
+        fun loop acc xs =
+          case comb xs of
+            Ok (v, rest) => loop (v :: acc) rest
+          | Err e => Ok (rev acc, xs)
       in
         loop [] xs
       end
