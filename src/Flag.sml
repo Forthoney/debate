@@ -4,10 +4,10 @@ sig
     { name: string
     , alias: string list
     , help: string
-    , args: 'a BaseArgument.arity
+    , args: string -> 'a Action.t Combinator.parser
     }
 
-  val toCombinator: 'a t -> (unit -> 'a option) Combinator.parser
+  val toCombinator: 'a t -> 'a Action.t Combinator.parser
   val toHelp: 'a t -> string
 end =
 struct
@@ -15,7 +15,7 @@ struct
     { name: string
     , alias: string list
     , help: string
-    , args: 'a BaseArgument.arity
+    , args: string -> 'a Action.t Combinator.parser
     }
 
   fun toCombinator {name, alias, args, help} =
@@ -23,8 +23,8 @@ struct
       open Combinator
       infix andThen
 
-      val args = BaseArgument.toCombinator args
-      val allParsers = map (fn name => exact name andThen args) (name :: alias)
+      val allParsers =
+        map (fn name => exact name andThen args name) (name :: alias)
     in
       or' allParsers
     end

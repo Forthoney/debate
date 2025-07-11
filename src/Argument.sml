@@ -1,14 +1,16 @@
 structure Argument =
 struct
   structure Int =
-    TypedArgumentFn (struct type a = int val fromString = Int.fromString end)
+    TypedArgumentFn (struct type t = int val fromString = Int.fromString end)
   structure Real =
-    TypedArgumentFn (struct type a = real val fromString = Real.fromString end)
+    TypedArgumentFn (struct type t = real val fromString = Real.fromString end)
   structure Bool =
-    TypedArgumentFn (struct type a = bool val fromString = Bool.fromString end)
+    TypedArgumentFn (struct type t = bool val fromString = Bool.fromString end)
 
-  val zero = BaseArgument.Zero
+  structure String =
+    TypedArgumentFn (struct type t = string val fromString = SOME end)
 
-  fun set target value =
-    SOME (target := value)
+  fun none f name =
+    Combinator.fmap (fn () => Action.unwrap (name, NONE) o f)
+      Combinator.noOp
 end

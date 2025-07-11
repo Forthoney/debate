@@ -1,25 +1,42 @@
+signature VALIDATED_ARGUMENT =
+sig
+  type t
+  val optional: (t option -> 'a option)
+                -> string
+                -> 'a Action.t Combinator.parser
+  val optionalWithDefault: (t -> 'a option) * t
+                           -> string
+                           -> 'a Action.t Combinator.parser
+  val one: (t -> 'a option) -> string -> 'a Action.t Combinator.parser
+end
+
 functor TypedArgumentFn
-  (T:
+  (Cvt:
    sig
-     type a
-     val fromString: string -> a option
-   end) =
+     type t
+     val fromString: string -> t option
+   end): VALIDATED_ARGUMENT =
 struct
-  type a = T.a
+  type t = Cvt.t
 
-  open BaseArgument
+  open Combinator
 
-  fun listConvert f args =
-    let val converted = List.mapPartial T.fromString args
-    in if length converted = length args then f converted else NONE
-    end
+  fun optional f name =
+    fmap
+      (fn v =>
+         fn () =>
+           (Action.unwrap (name, v) o f
+            o Option.mapPartial Cvt.fromString) v)
+      (try (satisfy (not o String.isPrefix "-")))
 
-  fun optional f =
-    Optional (f o Option.mapPartial T.fromString)
   fun optionalWithDefault (f, default) =
     optional (fn v => f (Option.getOpt (v, default)))
-  val atLeastOne = AtLeastOne o listConvert
-  val any = Any o listConvert
-  fun exactly (n, f) =
-    Exactly (n, listConvert f)
+
+  fun one f name =
+    fmap
+      (fn v =>
+         fn () =>
+           (Action.unwrap (name, SOME v)
+            o Option.composePartial (f, Cvt.fromString)) v)
+      (satisfy (not o String.isPrefix "-"))
 end
