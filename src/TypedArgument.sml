@@ -1,13 +1,10 @@
-signature VALIDATED_ARGUMENT =
+signature TYPED_ARGUMENT =
 sig
   type t
-  val optional: (t option -> 'a option)
-                -> string
-                -> 'a Action.t Combinator.parser
-  val optionalWithDefault: (t -> 'a option) * t
-                           -> string
-                           -> 'a Action.t Combinator.parser
-  val one: (t -> 'a option) -> string -> 'a Action.t Combinator.parser
+  type 'a arg_info = string -> 'a Action.t Combinator.parser
+  val optional: (string * (t option -> 'a option)) -> string * 'a arg_info
+  val optionalWithDefault: (string * (t -> 'a option) * t) -> string * 'a arg_info
+  val one: (string * (t -> 'a option)) -> string * 'a arg_info
 end
 
 functor TypedArgumentFn
@@ -15,28 +12,31 @@ functor TypedArgumentFn
    sig
      type t
      val fromString: string -> t option
-   end): VALIDATED_ARGUMENT =
+   end): TYPED_ARGUMENT =
 struct
   type t = Cvt.t
+  type 'a arg_info = string -> 'a Action.t Combinator.parser
 
   open Combinator
 
-  fun optional f name =
-    fmap
+  fun optional (metavar, f) =
+    ("[" ^ metavar ^ "]",
+    fn name => fmap
       (fn v =>
          fn () =>
            (Action.unwrap (name, v) o f
             o Option.mapPartial Cvt.fromString) v)
-      (try (satisfy (not o String.isPrefix "-")))
+      (try (satisfy (not o String.isPrefix "-"))))
 
-  fun optionalWithDefault (f, default) =
-    optional (fn v => f (Option.getOpt (v, default)))
+  fun optionalWithDefault (metavar, f, default) =
+    optional (metavar, fn v => f (Option.getOpt (v, default)))
 
-  fun one f name =
-    fmap
+  fun one (metavar, f) =
+    (metavar, 
+    fn name => fmap
       (fn v =>
          fn () =>
            (Action.unwrap (name, SOME v)
             o Option.composePartial (f, Cvt.fromString)) v)
-      (satisfy (not o String.isPrefix "-"))
+      (satisfy (not o String.isPrefix "-")))
 end

@@ -8,7 +8,6 @@ sig
     }
 
   val toCombinator: 'a t -> 'a Action.t Combinator.parser
-  val toHelp: 'a t -> string
 end =
 struct
   type 'a t =
@@ -28,7 +27,4 @@ struct
     in
       or' allParsers
     end
-
-  fun toHelp {name, alias, help, args} =
-    "  " ^ String.concatWith ", " (name :: alias) ^ "\t" ^ help
 end
