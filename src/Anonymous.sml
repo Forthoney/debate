@@ -1,12 +1,15 @@
 structure Anonymous:
 sig
-  type 'a t = {metavar: string, args: 'a BaseArgument.arity}
+  type 'a t = {metavar: string, args: string -> 'a Action.t Combinator.parser}
 
-  val toCombinator: 'a t -> (unit -> 'a option) Combinator.parser
+  val toHelp: 'a t -> string
+
+  val toCombinator: 'a t -> 'a Action.t Combinator.parser
 end =
 struct
-  type 'a t = {metavar: string, args: 'a BaseArgument.arity}
+  type 'a t = {metavar: string, args: string -> 'a Action.t Combinator.parser}
 
-  fun toCombinator {args, metavar} =
-    BaseArgument.toCombinator args
+  fun toHelp {metavar, args} = metavar
+
+  fun toCombinator {args, metavar} = args metavar
 end
