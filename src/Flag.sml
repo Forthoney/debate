@@ -1,21 +1,13 @@
 structure Flag:
 sig
   type 'a t =
-    { name: string
-    , alias: string list
-    , help: string
-    , args: string -> 'a Action.t Combinator.parser
-    }
+    {name: string, alias: string list, help: string, args: 'a Argument.parser}
 
   val toCombinator: 'a t -> 'a Action.t Combinator.parser
 end =
 struct
   type 'a t =
-    { name: string
-    , alias: string list
-    , help: string
-    , args: string -> 'a Action.t Combinator.parser
-    }
+    {name: string, alias: string list, help: string, args: 'a Argument.parser}
 
   fun toCombinator {name, alias, args, help} =
     let

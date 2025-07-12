@@ -14,5 +14,6 @@ struct
     SOME (target := value)
 
   fun unwrap _ (SOME v) = v
-    | unwrap (name, cause) NONE = raise Action {name=name, cause=cause}
+    | unwrap (name, cause) NONE =
+        raise Action {name = name, cause = cause}
 end
